@@ -216,3 +216,37 @@ turned the Mar 2008 trade from -72% into +15% (rolled twice, expired Sep
 above the strike, so no roll, and the crash came after. Same-strike rolling
 adds to the loan in the middle of a bear market. Rolling did not reduce the
 drawdown, and random entries with the same rolling rules still did better.
+
+## Run 7: event study: what happens after a Cipher B dot? (no exits, leverage or options)
+
+```
+python3 backtest/event_study.py WEEKLY_PRICES_DIR weekly
+python3 backtest/event_study.py DAILY_PRICES_DIR daily
+```
+
+For every dot, the forward return (next open to the close H bars later) is
+compared with that market's average H-bar forward return ("excess").
+Signals cluster in market-wide selloffs, so t-statistics are computed on
+calendar-month averages (|t| > 2 ≈ significant).
+
+Weekly, 104 markets:
+
+| Signal | Events | 13-wk excess (t) | 26-wk excess (t) | 52-wk excess (t) |
+|---|---|---|---|---|
+| Green dot | ~1,300 | -0.1% (-0.25) | +1.2% (0.46) | +4.1% (0.64) |
+| Red dot | ~3,700 | **-0.7% (-2.32)** | **-1.0% (-2.81)** | **-3.3% (-3.27)** |
+| Any WT cross up | ~8,800 | -0.3% (-1.09) | -0.1% (-1.15) | -0.6% (-2.03) |
+| Any WT cross down | ~8,800 | +0.2% (0.88) | -0.2% (-0.64) | -0.8% (-1.27) |
+
+- Red dots predict below-normal returns over the next 3–12 months, and
+  the result is statistically significant. It comes from individual stocks
+  (52-wk -3.2%, t = -3.2); on QQQ/SPY alone it is about zero. It is
+  strongest in 1999–2006 (52-wk -14.8%) and 2020–26 (-5.3%), weak in
+  2007–19.
+- Green dots are followed by above-normal 52-week returns in every period
+  (+2.9%, +2.3%, +8.3%, +3.0%), but the effect is not statistically
+  significant: it comes from a few large rebound months, and on QQQ and
+  SPY (10 and 13 dots) the excess was negative.
+- Daily dots (14 markets, 5 years) show the same signs and no significance.
+- Plain WaveTrend crosses (no overbought/oversold filter) carry nothing; the
+  ±53 levels are what matter.
