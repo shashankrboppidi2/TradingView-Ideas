@@ -1,3 +1,4 @@
 ideas*.jsonl
 ideas*.csv
 __pycache__/
+scripts*.csv
