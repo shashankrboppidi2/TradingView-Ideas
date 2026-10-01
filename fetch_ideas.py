@@ -11,6 +11,7 @@ Usage:
     python3 fetch_ideas.py --full             # also fetch each idea's full text
 """
 import argparse
+import csv
 import json
 import re
 import sys
@@ -79,7 +80,7 @@ def normalize(item):
         "interval": sym.get("interval"),
         "direction": DIRECTIONS.get(sym.get("direction"), sym.get("direction")),
         "author": user.get("username"),
-        "likes": item.get("likes_count"),
+        "boosts": item.get("likes_count"),  # shown as "Boost" on the site
         "comments": item.get("comments_count"),
         "is_education": item.get("is_education"),
         "is_picked": item.get("is_picked"),
@@ -97,6 +98,7 @@ def main():
     ap.add_argument("--delay", type=float, default=1.0,
                     help="seconds between requests")
     ap.add_argument("-o", "--out", default="ideas.jsonl")
+    ap.add_argument("--csv", help="also write a CSV (without descriptions)")
     args = ap.parse_args()
 
     seen = set()
@@ -123,6 +125,19 @@ def main():
                   file=sys.stderr)
             time.sleep(args.delay)
     print(f"wrote {len(seen)} ideas to {args.out}", file=sys.stderr)
+    if args.csv:
+        write_csv(args.out, args.csv)
+
+
+def write_csv(jsonl_path, csv_path):
+    with open(jsonl_path) as f:
+        rows = [json.loads(line) for line in f]
+    fields = [k for k in rows[0] if k != "description"] if rows else []
+    with open(csv_path, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(rows)
+    print(f"wrote {len(rows)} rows to {csv_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":
