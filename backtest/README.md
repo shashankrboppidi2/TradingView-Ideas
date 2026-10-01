@@ -12,6 +12,14 @@ bars, the connector's maximum) and is kept out of git. Expected layout:
 python3 backtest/run_cipher_layers.py PRICES_DIR results.csv
 ```
 
+> **Correction (Oct 2026):** earlier versions of these results used
+> WaveTrend's signal line with a 4-bar SMA (LazyBear's original WaveTrend)
+> and Stoch RSI on raw closes. VuManChu Cipher B uses a 3-bar SMA
+> (`wtMALen = 3`) and Stoch RSI on log closes. The 4-bar version missed
+> signals such as QQQ's weekly green dot in the week of 2026-04-06
+> (WT2 = -51.5 instead of -54.8). All tables below were re-run with the
+> Cipher B defaults.
+
 ## Run 1: VuManChu Cipher B with add-ons (Oct 2021 – Sep 2026, 14 markets)
 
 Markets: SPY, QQQ, IWM, TLT, GLD, AAPL, MSFT, NVDA, XLE, USO, EURUSD,
@@ -21,27 +29,26 @@ Equal-weight portfolio across all 14 markets:
 
 | Variant | CAGR | Sharpe | Max DD | Median exposure |
 |---|---|---|---|---|
-| Buy and hold | 20.2% | 1.04 | -28.7% | 100% |
-| Weekly SuperTrend(10,3) only | 15.8% | **1.08** | **-18.6%** | 60% |
-| Cipher B (buy dot in, sell dot out) | 7.8% | 0.69 | -19.8% | 44% |
-| Cipher B + 3×ATR trail from entry | 6.8% | 0.70 | -18.4% | — |
-| Cipher B + squeeze filter | 8.7% | 0.76 | -19.8% | — |
-| Cipher B + weekly SuperTrend filter | 3.3% | 0.59 | -9.2% | 16% |
-| … + Chandelier Exit (as published) | 1.4% | 0.52 | -3.9% | 6% |
-| … + squeeze filter | 1.4% | 0.57 | -3.2% | 5% |
+| Buy and hold | 20.2% | **1.04** | -28.7% | 100% |
+| Weekly SuperTrend(10,3) only | 15.8% | **1.08** | -18.6% | 60% |
+| Cipher B (buy dot in, sell dot out) | 7.1% | 0.66 | -19.2% | 45% |
+| Cipher B + 3×ATR trail from entry | 11.3% | 0.99 | -18.2% | 54% |
+| Cipher B + squeeze filter | 7.6% | 0.69 | -19.2% | 45% |
+| Cipher B + weekly SuperTrend filter | 3.1% | 0.56 | -9.1% | 17% |
+| … + Chandelier Exit (as published) | 0.2% | 0.13 | -3.7% | 6% |
+| … + squeeze filter | 0.1% | 0.12 | -2.2% | 5% |
 
 Findings:
-- Cipher B's buy dots are well timed (median 74% win rate, profit factor
-  3.8, +2.9% per trade) but it sits in cash more than half the time, so it
-  trails buy-and-hold on both return and Sharpe.
+- Cipher B's daily buy dots are well timed (median 73% win rate, profit
+  factor 3.1, +3.2% per trade) but it sits in cash more than half the time.
+- Exiting on a 3×ATR trail from entry instead of the sell dot lets winners
+  run and brings Cipher B close to buy-and-hold on Sharpe (0.99 vs 1.04).
 - A weekly trend filter hurts Cipher B: its best buys come right after
   selloffs, when the weekly trend has already turned down.
 - Chandelier Exit as published (highest close of the last 22 bars) exits
-  almost immediately after an oversold entry; a trail anchored at entry is
-  the usable form, and it did not improve risk-adjusted returns.
-- The squeeze filter skipped 1 of 128 trades; the difference is noise.
-- About 9 Cipher B trades per market in 5 years: differences between Cipher
-  variants are within noise. One mostly-bullish regime; needs longer data.
+  almost immediately after an oversold entry.
+- The squeeze filter skipped 1 of 135 trades; the difference is noise.
+- About 10 Cipher B trades per market in 5 years; one mostly-bullish regime.
 
 ## Run 2: Cipher B on daily vs weekly bars (May 2022 – Sep 2026)
 
@@ -54,20 +61,16 @@ variants start after a 30-week warmup (2022-05-06).
 
 | Variant | CAGR | Sharpe | Max DD | Excl. ETH: CAGR / Sharpe |
 |---|---|---|---|---|
-| Buy and hold | 23.5% | 1.14 | -22.5% | 24.8% / 1.23 |
-| Daily Cipher B | 8.1% | 0.77 | -13.2% | 9.0% / 0.88 |
-| Weekly Cipher B | 14.5% | **1.23** | -17.0% | 8.7% / 1.04 |
-| Weekly Cipher B + weekly SuperTrend exit | 1.2% | 0.67 | -1.8% | — |
+| Buy and hold | 23.5% | 1.14 | -22.5% | 24.8% / **1.23** |
+| Daily Cipher B | 7.5% | 0.71 | -13.5% | 8.3% / 0.81 |
+| Weekly Cipher B | 17.4% | **1.35** | -17.3% | 9.2% / 1.06 |
+| Weekly Cipher B + weekly SuperTrend exit | 1.7% | 0.82 | -2.7% | — |
 
-- Weekly: 33 trades, 29 winners, median +20.5%, average hold ~7.5 months.
-- Most weekly buys came in two clusters (Jun–Aug 2022 and Apr–May 2025)
-  across correlated markets, so there are only a few independent events.
-- The Sharpe lead over buy-and-hold depends on ETH (+137% on one trade);
-  without ETH it falls behind.
-- Monthly Cipher B produced zero buy dots in 30 usable months: untestable
-  without decades of data.
-- The SuperTrend exit fails for the same reason as in run 1: weekly buy
-  dots occur while the weekly trend is still down.
+- Weekly: 38 trades, 34 winners, median +16.8%.
+- Most weekly buys cluster around a few market-wide lows (mid-2022,
+  April 2025, April 2026), so there are few independent events.
+- The Sharpe lead over buy-and-hold depends on ETH; without ETH it trails.
+- Monthly Cipher B produced zero buy dots in 30 usable months.
 
 ## Run 3: weekly Cipher B add-on vs weekly SuperTrend, Nasdaq-100 + ETFs (1999 – Sep 2026)
 
@@ -84,16 +87,16 @@ IWM, TLT, GLD, XLE, USO, EURUSD, BTC, ETH. Not available: AEP, LIN, DASH
 script (mis-scaled history for MSTR/FTNT, bad prints for CMCSA/WBD, KDP's
 unadjusted 2018 special dividend); stray high/low prints are clipped.
 
-Equal-weight portfolio of all markets available each week (584 Cipher B
+Equal-weight portfolio of all markets available each week (608 Cipher B
 add-on entries in total):
 
 | Variant | CAGR | Sharpe | Max DD | Sharpe 2007–13 | 2014–19 | 2020–26 | Avg exposure |
 |---|---|---|---|---|---|---|---|
 | Buy and hold | 17.3% | **0.80** | -48.0% | 0.78 | **1.42** | **0.99** | 100% |
 | Weekly SuperTrend | 7.7% | 0.68 | -51.9% | **0.94** | 1.14 | 0.94 | 61% |
-| 50% hold + 50% Cipher add-on | 12.2% | 0.78 | -39.3% | 0.70 | 1.40 | 0.94 | 65% |
-| 50% SuperTrend + 50% Cipher add-on | 7.3% | 0.76 | **-24.6%** | 0.85 | 1.25 | 0.97 | 46% |
-| 100% if SuperTrend up or Cipher add-on open | 13.3% | **0.80** | -39.5% | 0.86 | 1.27 | 0.97 | 82% |
+| 50% hold + 50% Cipher add-on | 12.1% | 0.77 | -39.2% | 0.71 | 1.39 | 0.95 | 66% |
+| 50% SuperTrend + 50% Cipher add-on | 7.3% | 0.75 | **-25.3%** | 0.85 | 1.24 | 0.98 | 46% |
+| 100% if SuperTrend up or Cipher add-on open | 13.4% | **0.80** | -40.1% | 0.87 | 1.26 | 0.98 | 82% |
 
 Index ETFs (no survivorship bias):
 
@@ -101,18 +104,17 @@ Index ETFs (no survivorship bias):
 |---|---|---|
 | Buy and hold | 15.5% / **0.81** / -49.6% | 9.1% / 0.57 / -56.0% |
 | Weekly SuperTrend | 8.1% / 0.63 / **-25.9%** | 6.5% / **0.62** / **-22.5%** |
-| 50% SuperTrend + 50% Cipher add-on | 4.5% / 0.52 / -32.1% | 4.3% / 0.54 / -35.0% |
+| 50% SuperTrend + 50% Cipher add-on | 4.9% / 0.56 / -32.1% | 4.4% / 0.54 / -34.1% |
 
 Findings:
-- The strong 4-year result for the 50/50 SuperTrend + Cipher combination
-  (Sharpe 1.45, run on the 14-market set) does not hold over the longer
-  history: Sharpe 0.76 vs 0.80 for buy-and-hold. Its lasting benefit is
-  roughly half the drawdown (-24.6% vs -48%) at ~46% average exposure.
+- Over the long history no variant beats buy-and-hold on Sharpe. The 50/50
+  SuperTrend + Cipher combination's lasting benefit is roughly half the
+  drawdown (-25% vs -48%) at ~46% average exposure.
 - Against SuperTrend alone, the Cipher add-on variants have a higher Sharpe
-  in 65–71% of markets and at the portfolio level, so Cipher B timing adds
-  something to pure trend following on individual stocks.
-- On the index ETFs (QQQ, SPY) the Cipher add-on did not help: SuperTrend
-  alone gave the better risk-adjusted result and the smallest drawdowns.
+  in 67–72% of markets, so Cipher B timing adds something to pure trend
+  following on individual stocks.
+- On QQQ and SPY the Cipher add-on did not help: SuperTrend alone gave the
+  better risk-adjusted result and the smallest drawdowns.
 - Survivorship bias: today's Nasdaq-100 members are past winners, which
   flatters buy-and-hold on single stocks. QQQ and SPY are the cleaner test.
 
@@ -133,13 +135,19 @@ options data is available.
 |---|---|---|---|---|
 | Buy and hold | 15.5% | **0.81** | **-49.6%** | 15.1 |
 | Constant 125% (margin) | **18.0%** | 0.78 | -58.9% | **22.7** |
-| 125% on signal (margin) | 15.1% | 0.75 | -56.7% | 14.3 |
-| Calls on signal (25% financed) | 13.5% | 0.59 | -73.4% | 10.8 |
-| 125% at random times (median of 1,000) | 15.9% | 0.80 | -49.6% | 16.3 |
+| 125% on signal (margin) | 15.4% | 0.75 | -56.7% | 14.8 |
+| Calls on signal (25% financed) | 15.0% | 0.63 | -73.4% | 13.9 |
+| 125% at random times (median of 1,000) | 16.0% | 0.80 | -49.6% | 16.3 |
 
-Only 4 signal windows in 19 years: Mar 2008 → Jul 2009 (QQQ -15%, calls
--84%), Jan → May 2019 (+13%, +52%), Mar 2022 → May 2023 (-8%, -83%),
-May → Aug 2025 (+21%, +82%). The signal's timing beat only 8% of random
-timings. Looser entry/exit definitions (any green dot below zero; any red dot;
-with or without the Stoch RSI condition) and SPY gave the same picture: no
-variant beat buy-and-hold on Sharpe, and all had deeper drawdowns.
+Signal windows (fill weeks): Mar 2008 → Jun 2009 (QQQ -17%, calls -85%),
+Jan → May 2019 (+13%, +52%), Mar 2022 → May 2023 (-8%, -83%),
+May → Aug 2025 (+18%, +72%), Apr → Jun 2026 (+21%, +156%). The signal's
+timing beat 14% of random timings.
+
+Why leverage was held through 2008–09 and 2022: in a bear market, rallies
+stall before WaveTrend reaches +53, so the overbought red dot does not
+appear until the next bull market (max WT2 during the 2022 window before
+April 2023 was +34). Exiting on any red dot with Stoch RSI %K >= 80 cuts
+2008 short (exit June 2008) and gives QQQ 15.8% CAGR / Sharpe 0.79 / Max DD
+-50.4%. Other entry/exit definitions and SPY gave the same picture: no
+variant beat buy-and-hold on Sharpe.

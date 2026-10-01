@@ -46,20 +46,10 @@ FED_FUNDS = {1999: 5.0, 2000: 6.2, 2001: 3.9, 2002: 1.7, 2003: 1.1,
              2024: 5.1, 2025: 4.2, 2026: 3.8}
 
 
-def stoch_rsi_k(close, rsi_len=14, stoch_len=14, smooth=3):
-    delta = close.diff()
-    gain = ind.rma(delta.clip(lower=0), rsi_len)
-    loss = ind.rma(-delta.clip(upper=0), rsi_len)
-    rsi = 100 - 100 / (1 + gain / loss)
-    lo = rsi.rolling(stoch_len).min()
-    hi = rsi.rolling(stoch_len).max()
-    return (100 * (rsi - lo) / (hi - lo)).rolling(smooth).mean()
-
-
 def signal_windows(wk):
     """List of (entry_bar, exit_bar) where bars are the fill (next) weeks."""
     wt1, wt2 = ind.wavetrend(wk)
-    k = stoch_rsi_k(wk.close)
+    k = ind.stoch_rsi_k(wk.close)
     up = (wt1 > wt2) & (wt1.shift(1) <= wt2.shift(1))
     down = (wt1 < wt2) & (wt1.shift(1) >= wt2.shift(1))
     green = (up & (wt2 <= -53)).to_numpy()

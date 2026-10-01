@@ -27,8 +27,12 @@ def atr(df, n):
     return rma(true_range(df), n)
 
 
-def wavetrend(df, chlen=9, avg=12, malen=4):
-    """VuManChu Cipher B / LazyBear WaveTrend core (src = hlc3)."""
+def wavetrend(df, chlen=9, avg=12, malen=3):
+    """VuManChu Cipher B WaveTrend (src = hlc3, wtMALen = 3).
+
+    LazyBear's original WaveTrend uses malen=4; Cipher B's default is 3,
+    which shifts cross timing and decides whether a cross counts as a dot.
+    """
     ap = (df.high + df.low + df.close) / 3
     esa = ema(ap, chlen)
     d = ema((ap - esa).abs(), chlen)
@@ -36,6 +40,17 @@ def wavetrend(df, chlen=9, avg=12, malen=4):
     wt1 = ema(ci, avg)
     wt2 = wt1.rolling(malen).mean()
     return wt1, wt2
+
+
+def stoch_rsi_k(close, rsi_len=14, stoch_len=14, smooth_k=3, use_log=True):
+    """Cipher B Stoch RSI %K (defaults: log source, 14/14/3)."""
+    src = np.log(close) if use_log else close
+    delta = src.diff()
+    rsi = 100 - 100 / (1 + rma(delta.clip(lower=0), rsi_len)
+                       / rma(-delta.clip(upper=0), rsi_len))
+    lo = rsi.rolling(stoch_len).min()
+    hi = rsi.rolling(stoch_len).max()
+    return (100 * (rsi - lo) / (hi - lo)).rolling(smooth_k).mean()
 
 
 def cipher_b_signals(df, ob=53, os_=-53):
