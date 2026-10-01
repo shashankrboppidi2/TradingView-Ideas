@@ -184,3 +184,35 @@ Jan 2021 (+98%, +479%), Mar 2022 → Mar 2024 (+25%, +50%), May 2025 → open
 (+57% so far). 1-year LEAPS bought in Mar 2008 and Mar 2022 expired
 worthless. Stacking borrowed 100% of equity across four 2008 dots; the -96%
 drawdown would have meant margin calls in practice.
+
+## Run 6: LEAPS on green dots, rolled every 6 months while underwater (Nov 2007 – Sep 2026)
+
+```
+python3 backtest/run_qqq_leaps_roll.py WEEKLY_PRICES_DIR QQQ
+```
+
+Same setup as run 5 (one position at a time, 25% margin loan, Black-Scholes
+pricing). Every 26 weeks after purchase or the last roll, a position whose
+strike is above QQQ is rolled at the week's open:
+- **Down and out:** sell, then buy new full-tenor ATM calls with the
+  proceeds only (strike drops to the current price).
+- **Same strike:** sell, then buy the same strike with full tenor again; the
+  debit is added to the margin loan.
+
+| QQQ | CAGR | Sharpe | Max DD | $1 grows to | Random-entry median CAGR | Beats random |
+|---|---|---|---|---|---|---|
+| Buy and hold | 15.5% | **0.81** | **-49.6%** | 15.1 | — | — |
+| 1-year, hold to expiry | 14.0% | 0.60 | -74.1% | 11.8 | 19.8% | 5% |
+| 1-year, roll down and out | 14.9% | 0.62 | -74.1% | 13.7 | 19.8% | 4% |
+| 1-year, roll same strike | 16.8% | 0.65 | -74.1% | 18.6 | 21.3% | 8% |
+| 2-year, hold to expiry | 19.2% | 0.70 | -71.9% | 27.3 | 21.1% | 25% |
+| 2-year, roll down and out | 19.3% | 0.71 | -71.8% | 27.8 | 21.4% | 21% |
+| 2-year, roll same strike | **20.8%** | 0.70 | -72.4% | **35.2** | 23.3% | 20% |
+
+Rolls happened in the 2008–09 and 2022 bear markets: 2-year same-strike
+turned the Mar 2008 trade from -72% into +15% (rolled twice, expired Sep
+2011) and Mar 2022 from +50% into +65% (expired Mar 2025). The 1-year Mar
+2008 calls still expired worthless: at the 6-month check (Sep 2008) QQQ was
+above the strike, so no roll, and the crash came after. Same-strike rolling
+adds to the loan in the middle of a bear market. Rolling did not reduce the
+drawdown, and random entries with the same rolling rules still did better.

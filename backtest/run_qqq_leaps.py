@@ -41,8 +41,19 @@ def green_dots(wk):
     return [t for t in range(WARMUP, len(wk) - 1) if buy.iloc[t]]
 
 
-def run(wk, entries, years, moneyness, stack=False):
-    """entries: signal bars; the trade fills at the next bar's open."""
+def run(wk, entries, years, moneyness, stack=False, roll=None,
+        roll_every=26):
+    """entries: signal bars; the trade fills at the next bar's open.
+
+    roll: None (hold to expiry), "down_out" or "same_strike". Every
+    `roll_every` weeks after purchase (or the last roll), a position whose
+    strike is above QQQ (underwater) is rolled at that week's open:
+      down_out    sell, and buy new ATM calls with full tenor using only the
+                  proceeds (strike drops to the current price)
+      same_strike sell, and buy the same strike with full tenor again; the
+                  extra cost (debit) is added to the margin loan
+    Each sale/purchase loses SPREAD of premium.
+    """
     o, c = wk.open.to_numpy(), wk.close.to_numpy()
     iv, rate = implied_vol(wk), weekly_rate(wk.index)
     n_weeks = int(round(years * 52))
@@ -58,8 +69,29 @@ def run(wk, entries, years, moneyness, stack=False):
                            "qqq_move": o[t] / o[p["start"]] - 1,
                            "calls_return": payoff / p["cost"] - 1,
                            "net_after_loan": payoff - p["debt"],
+                           "rolls": p["rolls"],
                            "equity_at_buy": p["equity"]})
             pos.remove(p)
+        for p in pos if roll else []:                      # roll at open
+            if t - p["checked"] < roll_every or o[t] >= p["strike"]:
+                if t - p["checked"] >= roll_every:
+                    p["checked"] = t
+                continue
+            r_ = rate[t] * 52
+            proceeds = p["n"] * bs_call(o[t], p["strike"],
+                                        (p["expiry"] - t) / 52, r_,
+                                        iv[t - 1]) * (1 - SPREAD)
+            if roll == "down_out":
+                p["strike"] = o[t]
+                prem = bs_call(o[t], p["strike"], years, r_, iv[t - 1])
+                p["n"] = proceeds / (prem * (1 + SPREAD))
+            else:
+                prem = bs_call(o[t], p["strike"], years, r_, iv[t - 1])
+                cost = p["n"] * prem * (1 + SPREAD)
+                p["debt"] += cost - proceeds
+                p["cost"] += cost - proceeds
+            p["expiry"], p["checked"] = t + n_weeks, t
+            p["rolls"] += 1
         if t in entry_set and (stack or not pos):          # buy at open
             equity = shares * o[t] + sum(
                 p["n"] * bs_call(o[t], p["strike"], (p["expiry"] - t) / 52,
@@ -70,7 +102,8 @@ def run(wk, entries, years, moneyness, stack=False):
             prem = bs_call(o[t], strike, years, rate[t] * 52, iv[t - 1])
             pos.append({"n": loan / (prem * (1 + SPREAD)), "strike": strike,
                         "expiry": t + n_weeks, "debt": loan, "cost": loan,
-                        "start": t, "equity": equity})
+                        "start": t, "equity": equity, "checked": t,
+                        "rolls": 0})
         for p in pos:
             p["debt"] *= 1 + rate[t]
         eq.append(shares * c[t] + sum(
@@ -80,6 +113,7 @@ def run(wk, entries, years, moneyness, stack=False):
         trades.append({"bought": wk.index[p["start"]].date(),
                        "expired": "open", "qqq_move": c[-1] / o[p["start"]] - 1,
                        "calls_return": np.nan, "net_after_loan": np.nan,
+                       "rolls": p["rolls"],
                        "equity_at_buy": p["equity"]})
     return pd.Series(eq, index=wk.index[WARMUP + 1:]), pd.DataFrame(trades)
 
