@@ -250,3 +250,37 @@ Weekly, 104 markets:
 - Daily dots (14 markets, 5 years) show the same signs and no significance.
 - Plain WaveTrend crosses (no overbought/oversold filter) carry nothing; the
   ±53 levels are what matter.
+
+## Run 8: trim on weekly red dots, restore on green dots (1999 – Sep 2026)
+
+```
+python3 backtest/run_red_trim.py WEEKLY_PRICES_DIR
+```
+
+Start 100% invested; on a weekly red dot, cut to (1 − trim) at the next
+open; restore on the next green dot, or after 26 weeks if sooner. Cash earns
+nothing. "Beats random" = share of 200 shuffles (same trims at random weeks)
+with a lower Sharpe.
+
+Individual stocks (~94, equal weight):
+
+| Variant | CAGR | Sharpe | Max DD | Random-trim Sharpe | Beats random |
+|---|---|---|---|---|---|
+| Buy and hold | **18.3%** | 0.82 | -48.3% | — | — |
+| Trim ⅓, restore on green | 15.1% | 0.82 | -43.1% | 0.80 | **92%** |
+| Trim ⅓, restore on green or 26 wk | 16.2% | **0.83** | -44.4% | 0.82 | 80% |
+| Trim ½, restore on green | 13.4% | 0.81 | -41.0% | 0.79 | 85% |
+| Trim ½, restore on green or 26 wk | 15.1% | **0.83** | -43.0% | 0.82 | 68% |
+| Exit all, restore on green | 8.1% | 0.67 | **-34.4%** | 0.71 | 26% |
+| Exit all, restore on green or 26 wk | 11.6% | 0.78 | -38.7% | 0.80 | 30% |
+
+QQQ: every variant had a lower Sharpe than buy-and-hold (0.81) and than the
+same trims at random weeks (beats random 3–13%). SPY: same (beats random
+9–36%).
+
+- On individual stocks, partial trims on red dots beat random trims 68–92%
+  of the time (consistent with run 7), but the gain is small: Sharpe about
+  equal to buy-and-hold, 2–3 points less CAGR, 4–7 points less drawdown.
+- Full exits cost too much upside; restoring only on a green dot can leave
+  a stock underweight for years.
+- On QQQ/SPY the red dot has no timing value.
