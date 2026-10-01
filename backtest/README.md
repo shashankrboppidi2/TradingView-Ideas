@@ -68,3 +68,50 @@ variants start after a 30-week warmup (2022-05-06).
   without decades of data.
 - The SuperTrend exit fails for the same reason as in run 1: weekly buy
   dots occur while the weekly trend is still down.
+
+## Run 3: weekly Cipher B add-on vs weekly SuperTrend, Nasdaq-100 + ETFs (1999 – Sep 2026)
+
+```
+python3 backtest/run_weekly_addon.py WEEKLY_PRICES_DIR out_prefix
+```
+
+Weekly bars from the IBKR connector (max 1,000 bars per request, so most
+series start 2007 or earlier; some start later because of ticker changes or
+connector limits). 104 markets: ~93 current Nasdaq-100 members plus SPY, QQQ,
+IWM, TLT, GLD, XLE, USO, EURUSD, BTC, ETH. Not available: AEP, LIN, DASH
+(connector errors), EA (delisted), XAUUSD (no data subscription). Too short
+(<3 years): ARM, AZN, SPCX. Data fixes are listed in `START_AFTER` in the
+script (mis-scaled history for MSTR/FTNT, bad prints for CMCSA/WBD, KDP's
+unadjusted 2018 special dividend); stray high/low prints are clipped.
+
+Equal-weight portfolio of all markets available each week (584 Cipher B
+add-on entries in total):
+
+| Variant | CAGR | Sharpe | Max DD | Sharpe 2007–13 | 2014–19 | 2020–26 | Avg exposure |
+|---|---|---|---|---|---|---|---|
+| Buy and hold | 17.3% | **0.80** | -48.0% | 0.78 | **1.42** | **0.99** | 100% |
+| Weekly SuperTrend | 7.7% | 0.68 | -51.9% | **0.94** | 1.14 | 0.94 | 61% |
+| 50% hold + 50% Cipher add-on | 12.2% | 0.78 | -39.3% | 0.70 | 1.40 | 0.94 | 65% |
+| 50% SuperTrend + 50% Cipher add-on | 7.3% | 0.76 | **-24.6%** | 0.85 | 1.25 | 0.97 | 46% |
+| 100% if SuperTrend up or Cipher add-on open | 13.3% | **0.80** | -39.5% | 0.86 | 1.27 | 0.97 | 82% |
+
+Index ETFs (no survivorship bias):
+
+| | QQQ CAGR / Sharpe / Max DD | SPY CAGR / Sharpe / Max DD |
+|---|---|---|
+| Buy and hold | 15.5% / **0.81** / -49.6% | 9.1% / 0.57 / -56.0% |
+| Weekly SuperTrend | 8.1% / 0.63 / **-25.9%** | 6.5% / **0.62** / **-22.5%** |
+| 50% SuperTrend + 50% Cipher add-on | 4.5% / 0.52 / -32.1% | 4.3% / 0.54 / -35.0% |
+
+Findings:
+- The strong 4-year result for the 50/50 SuperTrend + Cipher combination
+  (Sharpe 1.45, run on the 14-market set) does not hold over the longer
+  history: Sharpe 0.76 vs 0.80 for buy-and-hold. Its lasting benefit is
+  roughly half the drawdown (-24.6% vs -48%) at ~46% average exposure.
+- Against SuperTrend alone, the Cipher add-on variants have a higher Sharpe
+  in 65–71% of markets and at the portfolio level, so Cipher B timing adds
+  something to pure trend following on individual stocks.
+- On the index ETFs (QQQ, SPY) the Cipher add-on did not help: SuperTrend
+  alone gave the better risk-adjusted result and the smallest drawdowns.
+- Survivorship bias: today's Nasdaq-100 members are past winners, which
+  flatters buy-and-hold on single stocks. QQQ and SPY are the cleaner test.

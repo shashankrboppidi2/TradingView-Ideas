@@ -34,6 +34,11 @@ COSTS = {"BTC": 0.001, "ETH": 0.001, "EURUSD": 0.0002}
 DEFAULT_COST = 0.0005
 VARIANTS = ["buy_hold", "supertrend", "core_bh_add", "core_st_add",
             "st_or_cipher"]
+# Data fixes for the IBKR weekly series (see README): start these histories
+# after a mis-scaled stretch, a bad print, or an unadjusted special dividend.
+START_AFTER = {"MSTR": "2002-08-02", "FTNT": "2014-01-17",
+               "CMCSA": "2017-02-24", "WBD": "2021-04-09",
+               "KDP": "2018-07-13"}
 PERIODS = [("2007-2013", "2007-01-01", "2013-12-31"),
            ("2014-2019", "2014-01-01", "2019-12-31"),
            ("2020-2026", "2020-01-01", "2026-12-31")]
@@ -43,7 +48,16 @@ def load_weekly(path):
     d = pd.read_csv(path, parse_dates=["date"]).set_index("date").sort_index()
     wk = d.resample("W-FRI").agg({"open": "first", "high": "max",
                                   "low": "min", "close": "last"}).dropna()
-    return wk[wk.index <= pd.Timestamp(LAST_WEEK)].astype(float)
+    wk = wk[wk.index <= pd.Timestamp(LAST_WEEK)].astype(float)
+    name = os.path.basename(path)[:-4]
+    if name in START_AFTER:
+        wk = wk[wk.index > pd.Timestamp(START_AFTER[name])]
+    # Neutralise stray prints (e.g. a weekly low of $1): a high/low more than
+    # 2x away from the bar's open/close range is replaced by that range.
+    lo, hi = wk[["open", "close"]].min(axis=1), wk[["open", "close"]].max(axis=1)
+    wk.loc[wk.low < 0.5 * lo, "low"] = lo
+    wk.loc[wk.high > 2 * hi, "high"] = hi
+    return wk
 
 
 def weights(wk):
