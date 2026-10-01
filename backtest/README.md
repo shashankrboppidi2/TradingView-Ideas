@@ -151,3 +151,36 @@ April 2023 was +34). Exiting on any red dot with Stoch RSI %K >= 80 cuts
 2008 short (exit June 2008) and gives QQQ 15.8% CAGR / Sharpe 0.79 / Max DD
 -50.4%. Other entry/exit definitions and SPY gave the same picture: no
 variant beat buy-and-hold on Sharpe.
+
+## Run 5: hold QQQ, buy LEAPS on weekly green dots and hold to expiry (Nov 2007 – Sep 2026)
+
+```
+python3 backtest/run_qqq_leaps.py WEEKLY_PRICES_DIR QQQ
+```
+
+On each weekly green dot, borrow 25% of equity and buy QQQ calls at the next
+open; hold to expiry, then repay the loan and reinvest the rest in QQQ. One
+position at a time unless "stack" (every green dot adds a position). Black-
+Scholes pricing with IV = ½ × (26-week realized vol × 1.1) + ½ × 22%, 2%
+spread on purchase; mark-to-model in between. "Random" buys the same LEAPS
+on random weeks (300 runs).
+
+Green dots (week of): 2008-02-25, 2008-03-17, 2008-10-27, 2008-11-24,
+2019-01-07, 2022-03-14, 2022-05-30, 2022-06-20, 2025-04-21, 2026-04-06.
+
+| QQQ | CAGR | Sharpe | Max DD | $1 grows to | Beats random |
+|---|---|---|---|---|---|
+| Buy and hold | 15.5% | **0.81** | **-49.6%** | 15.1 | — |
+| Constant 125% (margin) | 18.0% | 0.78 | -58.9% | 22.7 | — |
+| 1-year ATM LEAPS on signal | 14.0% | 0.60 | -74.1% | 11.8 | 4% |
+| 1-year ATM at random weeks (median) | 19.9% | 0.70 | -64.3% | 30.6 | — |
+| 2-year ATM LEAPS on signal | 19.2% | 0.70 | -71.9% | 27.3 | 28% |
+| 2-year 10% ITM LEAPS on signal | 19.2% | 0.71 | -71.1% | 27.4 | 30% |
+| 2-year ATM at random weeks (median) | 21.0% | 0.73 | -61.9% | 36.4 | — |
+| 2-year ATM, stacked on every dot | **23.7%** | 0.57 | -96.3% | **55.2** | — |
+
+2-year ATM trades: Mar 2008 → Mar 2010 (QQQ +5%, calls -72%), Jan 2019 →
+Jan 2021 (+98%, +479%), Mar 2022 → Mar 2024 (+25%, +50%), May 2025 → open
+(+57% so far). 1-year LEAPS bought in Mar 2008 and Mar 2022 expired
+worthless. Stacking borrowed 100% of equity across four 2008 dots; the -96%
+drawdown would have meant margin calls in practice.
