@@ -62,3 +62,20 @@ def metrics(rets, trades, df):
         "profit_factor": wins / losses if losses > 0 else np.nan,
         "avg_trade": tr.mean() if len(tr) else np.nan,
     }
+
+
+def returns_weighted(df, weight, cost):
+    """Like returns_from_positions, but for fractional weights in [0, 1].
+
+    weight[t] is decided at bar t's close and applied from bar t+1's open.
+    The overnight gap is earned on the old weight, the session on the new
+    one, and costs are charged on the change in weight.
+    """
+    o, c = df.open.to_numpy(), df.close.to_numpy()
+    w = np.r_[0.0, weight.to_numpy()[:-1]]  # weight during each session
+    r = np.zeros(len(df))
+    for t in range(1, len(df)):
+        r[t] = (w[t - 1] * (o[t] / c[t - 1] - 1)
+                + w[t] * (c[t] / o[t] - 1)
+                - cost * abs(w[t] - w[t - 1]))
+    return pd.Series(r, index=df.index)
