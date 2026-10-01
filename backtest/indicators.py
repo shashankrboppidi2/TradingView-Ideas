@@ -42,15 +42,35 @@ def wavetrend(df, chlen=9, avg=12, malen=3):
     return wt1, wt2
 
 
-def stoch_rsi_k(close, rsi_len=14, stoch_len=14, smooth_k=3, use_log=True):
-    """Cipher B Stoch RSI %K (defaults: log source, 14/14/3)."""
+def pine_rma(s, n):
+    """Pine ta.rma: seeded with the SMA of the first n values."""
+    v = s.to_numpy(dtype=float)
+    out = np.full(len(v), np.nan)
+    ok = np.flatnonzero(~np.isnan(v))
+    if len(ok) >= n:
+        f = ok[0]
+        out[f + n - 1] = np.mean(v[f:f + n])
+        for i in range(f + n, len(v)):
+            out[i] = (out[i - 1] * (n - 1) + v[i]) / n
+    return pd.Series(out, index=s.index)
+
+
+def stoch_rsi_k(close, rsi_len=14, stoch_len=14, smooth_k=3, smooth_d=3,
+                use_log=True, use_avg=True):
+    """Cipher B Stoch RSI line as plotted ("Stoch K").
+
+    Log source, 14/14/3/3, and the plotted K is avg(K, D) (Cipher B's
+    "stoch average"). Verified against a TradingView export of QQQ weekly
+    (max difference < 0.001).
+    """
     src = np.log(close) if use_log else close
     delta = src.diff()
-    rsi = 100 - 100 / (1 + rma(delta.clip(lower=0), rsi_len)
-                       / rma(-delta.clip(upper=0), rsi_len))
+    rsi = 100 - 100 / (1 + pine_rma(delta.clip(lower=0), rsi_len)
+                       / pine_rma(-delta.clip(upper=0), rsi_len))
     lo = rsi.rolling(stoch_len).min()
     hi = rsi.rolling(stoch_len).max()
-    return (100 * (rsi - lo) / (hi - lo)).rolling(smooth_k).mean()
+    k = (100 * (rsi - lo) / (hi - lo)).rolling(smooth_k).mean()
+    return (k + k.rolling(smooth_d).mean()) / 2 if use_avg else k
 
 
 def cipher_b_signals(df, ob=53, os_=-53):

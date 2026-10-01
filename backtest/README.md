@@ -284,3 +284,35 @@ same trims at random weeks (beats random 3–13%). SPY: same (beats random
 - Full exits cost too much upside; restoring only on a green dot can leave
   a stock underweight for years.
 - On QQQ/SPY the red dot has no timing value.
+
+## Verification against TradingView exports
+
+```
+python3 backtest/verify_tradingview.py data/tradingview/*.csv
+```
+
+`data/tradingview/` holds TradingView "Export chart data" files (weekly,
+VuManChu Cipher B with inputs 9/12/hlc3/3, ±53, Stoch RSI 14/14/3/3 on
+close) for QQQ, SPY, AAPL, MSFT and NVDA. Recomputed from each export's own
+prices:
+
+- WT1/WT2 match to within 0.0001.
+- Stoch K matches once the plotted line is taken as avg(%K, %D) (Cipher B's
+  "stoch average"); fixed in `indicators.stoch_rsi_k`. Max difference
+  0.00–0.14.
+- Buy circles: 117 of 117 matched. Sell circles: 442 of 446 matched. The
+  only differences are in the first months of each file (indicator warmup).
+- Against the IBKR weekly data used in runs 3–8, the same weeks fire apart
+  from a handful of near-threshold cases.
+
+Run 4 on TradingView's longer history (QQQ from 1999, SPY from 1993):
+
+| | CAGR | Sharpe | Max DD | Signal beats random timing |
+|---|---|---|---|---|
+| QQQ buy and hold | 10.0% | **0.52** | **-82.4%** | — |
+| QQQ 125% on signal | 8.8% | 0.45 | -87.9% | 6% |
+| SPY buy and hold | 8.9% | **0.58** | **-55.9%** | — |
+| SPY 125% on signal | 8.5% | 0.53 | -67.2% | 8% |
+
+The extra history adds the 2000–03 bear market: a green dot in Dec 2000
+kept QQQ leverage on for 127 weeks while QQQ fell another 57%.
