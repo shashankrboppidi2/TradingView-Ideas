@@ -58,14 +58,28 @@ def feed_page(page):
     return []
 
 
-def full_description(chart_url, fallback):
-    """The feed truncates descriptions; the idea page has the full text."""
-    best = fallback
+def full_description(chart_url, idea_id, fallback):
+    """The feed truncates descriptions; the idea page has the full text.
+
+    The page also embeds related ideas, so only trust the record whose id
+    matches. Author follow-up updates are appended after the description.
+    """
     for blob in init_blobs(get(chart_url)):
-        for d in find_key(blob, "description"):
-            if isinstance(d, str) and len(d) > len(best):
-                best = d
-    return best
+        for idea in find_key(blob, "ssrIdeaData"):
+            if not isinstance(idea, dict) or idea.get("id") != idea_id:
+                continue
+            text = idea.get("description") or fallback
+            for upd in idea.get("updates") or []:
+                if isinstance(upd, dict) and upd.get("description"):
+                    text += f"\n\n[Update {upd.get('created_at', '')}]\n"
+                    text += upd["description"]
+            return strip_bbcode(text)
+    return fallback
+
+
+def strip_bbcode(text):
+    text = text.replace("[*]", "- ")
+    return re.sub(r"\[/?[a-z]+(?:=[^\]]*)?\]", "", text)
 
 
 def normalize(item):
@@ -119,7 +133,7 @@ def main():
                 if args.full:
                     time.sleep(args.delay)
                     idea["description"] = full_description(
-                        idea["url"], idea["description"])
+                        idea["url"], idea["id"], idea["description"])
                 out.write(json.dumps(idea, ensure_ascii=False) + "\n")
             print(f"page {page}: {len(items)} ideas ({len(seen)} total)",
                   file=sys.stderr)
