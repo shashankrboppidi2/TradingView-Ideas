@@ -115,3 +115,31 @@ Findings:
   alone gave the better risk-adjusted result and the smallest drawdowns.
 - Survivorship bias: today's Nasdaq-100 members are past winners, which
   flatters buy-and-hold on single stocks. QQQ and SPY are the cleaner test.
+
+## Run 4: hold QQQ, add 25% leverage on weekly Cipher B signals (Nov 2007 – Sep 2026)
+
+```
+python3 backtest/run_qqq_leverage.py WEEKLY_PRICES_DIR QQQ
+```
+
+Lever up on a weekly green dot (WT cross up, WT2 <= -53); lever down on a
+weekly red dot at the overbought line (WT cross down, WT2 >= +53) with Stoch
+RSI %K >= 80. Margin interest ≈ annual Fed funds average + 1.5% (approximate
+rates hard-coded in the script). Calls are simulated with Black-Scholes
+(IV = 26-week realized vol × 1.1, 2% spread per side), since no historical
+options data is available.
+
+| QQQ | CAGR | Sharpe | Max DD | $1 grows to |
+|---|---|---|---|---|
+| Buy and hold | 15.5% | **0.81** | **-49.6%** | 15.1 |
+| Constant 125% (margin) | **18.0%** | 0.78 | -58.9% | **22.7** |
+| 125% on signal (margin) | 15.1% | 0.75 | -56.7% | 14.3 |
+| Calls on signal (25% financed) | 13.5% | 0.59 | -73.4% | 10.8 |
+| 125% at random times (median of 1,000) | 15.9% | 0.80 | -49.6% | 16.3 |
+
+Only 4 signal windows in 19 years: Mar 2008 → Jul 2009 (QQQ -15%, calls
+-84%), Jan → May 2019 (+13%, +52%), Mar 2022 → May 2023 (-8%, -83%),
+May → Aug 2025 (+21%, +82%). The signal's timing beat only 8% of random
+timings. Looser entry/exit definitions (any green dot below zero; any red dot;
+with or without the Stoch RSI condition) and SPY gave the same picture: no
+variant beat buy-and-hold on Sharpe, and all had deeper drawdowns.
